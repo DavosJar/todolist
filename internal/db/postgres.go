@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"time"
 	"todo_list/internal/models"
 
@@ -60,6 +61,9 @@ func (d *Database) CreateUser(ctx context.Context, email, passwordHash string) (
 func (d *Database) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
 	if err := d.DB.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // Usuario no encontrado, no es error
+		}
 		return nil, err
 	}
 	return &user, nil
@@ -68,6 +72,9 @@ func (d *Database) GetUserByEmail(ctx context.Context, email string) (*models.Us
 func (d *Database) GetUserPassword(ctx context.Context, userID string) (string, error) {
 	var user models.User
 	if err := d.DB.WithContext(ctx).Where("id = ?", userID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil // Usuario no encontrado, no es error
+		}
 		return "", err
 	}
 	return user.PasswordHash, nil
@@ -89,6 +96,9 @@ func (d *Database) CreateTenant(ctx context.Context, userID string, name string)
 func (d *Database) GetTenantByUserID(ctx context.Context, userID string) (*models.Tenant, error) {
 	var tenant models.Tenant
 	if err := d.DB.WithContext(ctx).Where("user_id = ?", userID).First(&tenant).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // Tenant no encontrado, no es error
+		}
 		return nil, err
 	}
 	return &tenant, nil

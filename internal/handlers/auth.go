@@ -167,15 +167,36 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tenantName := email
-	_, err = h.db.CreateTenant(r.Context(), user.ID, tenantName)
+	tenant, err := h.db.CreateTenant(r.Context(), user.ID, tenantName)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html")
 		templates.RegisterPage("Error al crear tenant").Render(r.Context(), w)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html")
-	templates.RegisterSuccessPage().Render(r.Context(), w)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, middleware.Claims{
+		UserID:   user.ID,
+		TenantID: tenant.ID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	})
+
+	tokenString, err := token.SignedString([]byte(h.jwtSecret))
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html")
+		templates.RegisterPage("Error al generar token").Render(r.Context(), w)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    tokenString,
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   86400,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {

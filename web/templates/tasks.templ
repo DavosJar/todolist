@@ -21,17 +21,17 @@ templ TasksContent(tasks []models.Task) {
 			<button type="submit">Añadir</button>
 		</div>
 	</form>
-	if len(tasks) == 0 {
-		<div class="empty-state">
-			<p>No hay tareas. ¡Crea una para empezar!</p>
-		</div>
-	} else {
-		<ul class="tasks-list" id="tasks-list">
+	<ul class="tasks-list" id="tasks-list">
+		if len(tasks) == 0 {
+			<div class="empty-state">
+				<p>No hay tareas. ¡Crea una para empezar!</p>
+			</div>
+		} else {
 			for _, task := range tasks {
 				@TaskItem(task)
 			}
-		</ul>
-	}
+		}
+	</ul>
 }
 
 templ TaskItem(task models.Task) {
