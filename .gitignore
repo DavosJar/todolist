@@ -1,0 +1,33 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Binaries
+bin/
+main
+todo
+*.exe
+*.dll
+*.dylib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Go
+*.o
+*.a
+*.so
+vendor/
+dist/
+
+# Templ
+web/templates/*_templ.go
+
+# Docker
+docker-compose.override.yml
