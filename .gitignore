@@ -31,3 +31,4 @@ web/templates/*_templ.go
 
 # Docker
 docker-compose.override.yml
+.gomcp/

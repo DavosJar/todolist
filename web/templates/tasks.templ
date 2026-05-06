@@ -35,22 +35,22 @@ templ TasksContent(tasks []models.Task) {
 }
 
 templ TaskItem(task models.Task) {
-	<li class="task-item" id={ "task-" + task.ID.String() }>
+	<li class="task-item" id={ "task-" + task.ID }>
 	<input type="checkbox"
 		name="completed"
 		value="on"
 		checked?={ task.Completed }
-		hx-put={ "/tasks/" + task.ID.String() }
-		hx-target={ "#task-" + task.ID.String() }
-		hx-swap="outerHTML"
-		hx-include="this"/>
-		<span class={ "task-title", templ.KV("completed", task.Completed) }>
-			{ task.Title }
-		</span>
-		<button class="btn-delete" type="button"
-			hx-delete={ "/tasks/" + task.ID.String() }
-			hx-target={ "#task-" + task.ID.String() }
-			hx-swap="outerHTML">
+		hx-put={ "/tasks/" + task.ID }
+	hx-target={ "#task-" + task.ID }
+	hx-swap="outerHTML"
+	hx-include="this"/>
+	<span class={ "task-title", templ.KV("completed", task.Completed) }>
+		{ task.Title }
+	</span>
+	<button class="btn-delete" type="button"
+		hx-delete={ "/tasks/" + task.ID }
+		hx-target={ "#task-" + task.ID }
+		hx-swap="outerHTML">
 			Eliminar
 		</button>
 	</li>

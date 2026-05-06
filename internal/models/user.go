@@ -7,8 +7,17 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"` // Nunca serializar password
-	CreatedAt time.Time `json:"created_at"`
+	ID           string    `gorm:"type:uuid;primaryKey"`
+	Email        string    `gorm:"unique;not null"`
+	PasswordHash string    `gorm:"not null"`
+	CreatedAt    time.Time
+}
+
+func (u *User) GetID() uuid.UUID {
+	id, _ := uuid.Parse(u.ID)
+	return id
+}
+
+func (u *User) GetEmail() string {
+	return u.Email
 }

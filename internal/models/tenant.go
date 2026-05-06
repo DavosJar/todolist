@@ -7,8 +7,18 @@ import (
 )
 
 type Tenant struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
+	ID     string `gorm:"type:uuid;primaryKey"`
+	UserID string `gorm:"type:uuid;not null"`
+	Name   string `gorm:"not null"`
+	CreatedAt time.Time
+}
+
+func (t *Tenant) GetID() uuid.UUID {
+	id, _ := uuid.Parse(t.ID)
+	return id
+}
+
+func (t *Tenant) GetUserID() uuid.UUID {
+	id, _ := uuid.Parse(t.UserID)
+	return id
 }

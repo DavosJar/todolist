@@ -7,9 +7,19 @@ import (
 )
 
 type Task struct {
-	ID        uuid.UUID `json:"id"`
-	TenantID  uuid.UUID `json:"tenant_id"`
-	Title     string    `json:"title"`
-	Completed bool      `json:"completed"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        string `gorm:"type:uuid;primaryKey"`
+	TenantID  string `gorm:"type:uuid;not null"`
+	Title     string `gorm:"not null"`
+	Completed bool   `gorm:"default:false"`
+	CreatedAt time.Time
+}
+
+func (t *Task) GetID() uuid.UUID {
+	id, _ := uuid.Parse(t.ID)
+	return id
+}
+
+func (t *Task) GetTenantID() uuid.UUID {
+	id, _ := uuid.Parse(t.TenantID)
+	return id
 }

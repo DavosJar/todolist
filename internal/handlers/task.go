@@ -8,7 +8,6 @@ import (
 	"todo_list/web/templates"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 type TaskHandler struct {
@@ -21,7 +20,7 @@ func NewTaskHandler(database *db.Database) *TaskHandler {
 
 func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	if tenantID == uuid.Nil {
+	if tenantID == "" {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -42,7 +41,7 @@ func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	if tenantID == uuid.Nil {
+	if tenantID == "" {
 		http.Error(w, "No autorizado", http.StatusUnauthorized)
 		return
 	}
@@ -70,7 +69,7 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	if tenantID == uuid.Nil {
+	if tenantID == "" {
 		http.Error(w, "No autorizado", http.StatusUnauthorized)
 		return
 	}
@@ -81,15 +80,9 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskID, err := uuid.Parse(taskIDStr)
-	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-
 	completed := r.FormValue("completed") == "on"
 
-	task, err := h.db.UpdateTask(r.Context(), taskID, tenantID, completed)
+	task, err := h.db.UpdateTask(r.Context(), taskIDStr, tenantID, completed)
 	if err != nil {
 		http.Error(w, "Error al actualizar tarea", http.StatusInternalServerError)
 		return
@@ -101,7 +94,7 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	if tenantID == uuid.Nil {
+	if tenantID == "" {
 		http.Error(w, "No autorizado", http.StatusUnauthorized)
 		return
 	}
@@ -112,13 +105,7 @@ func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskID, err := uuid.Parse(taskIDStr)
-	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-
-	if err := h.db.DeleteTask(r.Context(), taskID, tenantID); err != nil {
+	if err := h.db.DeleteTask(r.Context(), taskIDStr, tenantID); err != nil {
 		http.Error(w, "Error al eliminar tarea", http.StatusInternalServerError)
 		return
 	}

@@ -4,10 +4,8 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"todo_list/internal/db"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 const (
@@ -16,12 +14,12 @@ const (
 )
 
 type Claims struct {
-	UserID   uuid.UUID `json:"user_id"`
-	TenantID uuid.UUID `json:"tenant_id"`
+	UserID   string `json:"user_id"`
+	TenantID string `json:"tenant_id"`
 	jwt.RegisteredClaims
 }
 
-func AuthMiddleware(jwtSecret string, database *db.Database) func(http.Handler) http.Handler {
+func AuthMiddleware(jwtSecret string, database interface{}) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString := ""
@@ -66,18 +64,18 @@ func AuthMiddleware(jwtSecret string, database *db.Database) func(http.Handler) 
 	}
 }
 
-func GetUserID(ctx context.Context) uuid.UUID {
-	userID, ok := ctx.Value(UserIDKey).(uuid.UUID)
+func GetUserID(ctx context.Context) string {
+	userID, ok := ctx.Value(UserIDKey).(string)
 	if !ok {
-		return uuid.Nil
+		return ""
 	}
 	return userID
 }
 
-func GetTenantID(ctx context.Context) uuid.UUID {
-	tenantID, ok := ctx.Value(TenantIDKey).(uuid.UUID)
+func GetTenantID(ctx context.Context) string {
+	tenantID, ok := ctx.Value(TenantIDKey).(string)
 	if !ok {
-		return uuid.Nil
+		return ""
 	}
 	return tenantID
 }
