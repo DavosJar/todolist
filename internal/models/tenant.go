@@ -2,13 +2,11 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Tenant struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Name      string    `json:"name"`
+	ID        string    `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID    string    `gorm:"type:uuid;not null" json:"user_id"`
+	Name      string    `gorm:"not null" json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 }

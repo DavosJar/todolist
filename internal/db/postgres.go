@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 	"todo_list/internal/models"
+
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -45,6 +47,7 @@ func (d *Database) AutoMigrate() error {
 // User operations
 func (d *Database) CreateUser(ctx context.Context, email, passwordHash string) (*models.User, error) {
 	user := &models.User{
+		ID:           uuid.New().String(),
 		Email:        email,
 		PasswordHash: passwordHash,
 	}
@@ -73,6 +76,7 @@ func (d *Database) GetUserPassword(ctx context.Context, userID string) (string, 
 // Tenant operations
 func (d *Database) CreateTenant(ctx context.Context, userID string, name string) (*models.Tenant, error) {
 	tenant := &models.Tenant{
+		ID:     uuid.New().String(),
 		UserID: userID,
 		Name:   name,
 	}
@@ -93,6 +97,7 @@ func (d *Database) GetTenantByUserID(ctx context.Context, userID string) (*model
 // Task operations
 func (d *Database) CreateTask(ctx context.Context, tenantID, title string) (*models.Task, error) {
 	task := &models.Task{
+		ID:       uuid.New().String(),
 		TenantID: tenantID,
 		Title:    title,
 	}

@@ -8,7 +8,6 @@ import (
 	"todo_list/web/templates"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 type TaskHandler struct {
@@ -21,7 +20,7 @@ func NewTaskHandler(database *db.Database) *TaskHandler {
 
 func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	if tenantID == uuid.Nil {
+	if tenantID == "" {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -42,7 +41,7 @@ func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	if tenantID == uuid.Nil {
+	if tenantID == "" {
 		http.Error(w, "No autorizado", http.StatusUnauthorized)
 		return
 	}
@@ -70,19 +69,13 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	if tenantID == uuid.Nil {
+	if tenantID == "" {
 		http.Error(w, "No autorizado", http.StatusUnauthorized)
 		return
 	}
 
-	taskIDStr := chi.URLParam(r, "id")
-	if taskIDStr == "" {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-
-	taskID, err := uuid.Parse(taskIDStr)
-	if err != nil {
+	taskID := chi.URLParam(r, "id")
+	if taskID == "" {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
@@ -101,19 +94,13 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	if tenantID == uuid.Nil {
+	if tenantID == "" {
 		http.Error(w, "No autorizado", http.StatusUnauthorized)
 		return
 	}
 
-	taskIDStr := chi.URLParam(r, "id")
-	if taskIDStr == "" {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-
-	taskID, err := uuid.Parse(taskIDStr)
-	if err != nil {
+	taskID := chi.URLParam(r, "id")
+	if taskID == "" {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
