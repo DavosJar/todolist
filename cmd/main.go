@@ -12,6 +12,9 @@ import (
 
 func main() {
 	c := config.Load()
+	if c.DatabaseURL == "" {
+		log.Fatal("DATABASE_URL no configurada")
+	}
 	d, err := db.New(c.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Error conectando a DB: %v", err)
