@@ -12,8 +12,14 @@ type Config struct {
 }
 
 func Load() *Config {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		// En Render, esto no debería pasar
+		// Pero si pasa, usamos un default para desarrollo local
+		databaseURL = "postgres://postgres:postgres@localhost:5432/todos_db"
+	}
 	return &Config{
-		DatabaseURL: getEnv("DATABASE_URL",""),
+		DatabaseURL: databaseURL,
 		Port:        getEnv("PORT", "8080"),
 		Environment: getEnv("ENVIRONMENT", "development"),
 		JWTSecret:   getEnv("JWT_SECRET", "your-super-secret-key-change-in-production"),
