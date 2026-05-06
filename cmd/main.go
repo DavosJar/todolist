@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 	"todo_list/config"
 	"todo_list/internal/db"
 	"todo_list/internal/handlers"
 	"todo_list/internal/middleware"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
@@ -17,6 +18,12 @@ func main() {
 		log.Fatalf("Error conectando a DB: %v", err)
 	}
 	defer d.Close()
+
+	// Migrar tablas automáticamente
+	if err := d.AutoMigrate(); err != nil {
+		log.Fatalf("Error migrando BD: %v", err)
+	}
+
 	r := chi.NewRouter()
 	r.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
 		http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))).ServeHTTP(w, r)
