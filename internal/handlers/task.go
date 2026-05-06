@@ -25,11 +25,14 @@ func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("[DEBUG] List tasks: tenantID=%s", tenantID)
 	tasks, err := h.db.GetTasks(r.Context(), tenantID)
 	if err != nil {
+		log.Printf("[ERROR] GetTasks failed: %v", err)
 		http.Error(w, "Error al obtener tareas", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("[DEBUG] GetTasks returned %d tasks", len(tasks))
 
 	if tasks == nil {
 		tasks = []models.Task{}

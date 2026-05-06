@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 	"todo_list/internal/models"
 
@@ -118,10 +119,13 @@ func (d *Database) CreateTask(ctx context.Context, tenantID, title string) (*mod
 }
 
 func (d *Database) GetTasks(ctx context.Context, tenantID string) ([]models.Task, error) {
+	log.Printf("[DEBUG] GetTasks: tenantID=%s", tenantID)
 	var tasks []models.Task
 	if err := d.DB.WithContext(ctx).Where("tenant_id = ?", tenantID).Find(&tasks).Error; err != nil {
+		log.Printf("[ERROR] GetTasks query failed: %v", err)
 		return nil, err
 	}
+	log.Printf("[DEBUG] GetTasks query returned %d tasks", len(tasks))
 	return tasks, nil
 }
 
