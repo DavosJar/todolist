@@ -4,195 +4,124 @@ import (
 	"context"
 	"time"
 	"todo_list/internal/models"
-
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Database struct {
-	pool *pgxpool.Pool
+	DB *gorm.DB
 }
 
 func New(databaseURL string) (*Database, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	pool, err := pgxpool.New(ctx, databaseURL)
+	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
-
-	if err := pool.Ping(ctx); err != nil {
-		return nil, err
-	}
-
-	return &Database{pool: pool}, nil
-}
-
-// User operations
-func (db *Database) CreateUser(ctx context.Context, email, passwordHash string) (*models.User, error) {
-	user := &models.User{
-		ID:        uuid.New(),
-		Email:     email,
-		CreatedAt: time.Now(),
-	}
-
-	_, err := db.pool.Exec(ctx,
-		"INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)",
-		user.ID, email, passwordHash)
-
+	
+	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
 	}
-
-	return user, nil
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+	
+	return &Database{DB: db}, nil
 }
 
-func (db *Database) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	user := &models.User{}
-	err := db.pool.QueryRow(ctx,
-		"SELECT id, email, created_at FROM users WHERE email = $1",
-		email).
-		Scan(&user.ID, &user.Email, &user.CreatedAt)
-
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func (db *Database) GetUserPassword(ctx context.Context, userID uuid.UUID) (string, error) {
-	var passwordHash string
-	err := db.pool.QueryRow(ctx,
-		"SELECT password_hash FROM users WHERE id = $1",
-		userID).
-		Scan(&passwordHash)
-
-	if err != nil {
-		return "", err
-	}
-
-	return passwordHash, nil
-}
-
-// Tenant operations
-func (db *Database) CreateTenant(ctx context.Context, userID uuid.UUID, name string) (*models.Tenant, error) {
-	tenant := &models.Tenant{
-		ID:        uuid.New(),
-		UserID:    userID,
-		Name:      name,
-		CreatedAt: time.Now(),
-	}
-
-	_, err := db.pool.Exec(ctx,
-		"INSERT INTO tenants (id, user_id, name) VALUES ($1, $2, $3)",
-		tenant.ID, userID, name)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return tenant, nil
-}
-
-func (db *Database) GetTenantByUserID(ctx context.Context, userID uuid.UUID) (*models.Tenant, error) {
-	tenant := &models.Tenant{}
-	err := db.pool.QueryRow(ctx,
-		"SELECT id, user_id, name, created_at FROM tenants WHERE user_id = $1",
-		userID).
-		Scan(&tenant.ID, &tenant.UserID, &tenant.Name, &tenant.CreatedAt)
-
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return tenant, nil
-}
-
-// Task operations
-func (db *Database) GetTasks(ctx context.Context, tenantID uuid.UUID) ([]models.Task, error) {
-	rows, err := db.pool.Query(ctx,
-		"SELECT id, tenant_id, title, completed, created_at FROM tasks WHERE tenant_id = $1 ORDER BY created_at DESC",
-		tenantID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var tasks []models.Task
-	for rows.Next() {
-		var task models.Task
-		err := rows.Scan(&task.ID, &task.TenantID, &task.Title, &task.Completed, &task.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		tasks = append(tasks, task)
-	}
-
-	return tasks, rows.Err()
-}
-
-func (db *Database) CreateTask(ctx context.Context, tenantID uuid.UUID, title string) (*models.Task, error) {
-	task := &models.Task{
-		ID:        uuid.New(),
-		TenantID:  tenantID,
-		Title:     title,
-		Completed: false,
-		CreatedAt: time.Now(),
-	}
-
-	_, err := db.pool.Exec(ctx,
-		"INSERT INTO tasks (id, tenant_id, title, completed) VALUES ($1, $2, $3, $4)",
-		task.ID, tenantID, title, false)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return task, nil
-}
-
-func (db *Database) UpdateTask(ctx context.Context, taskID uuid.UUID, tenantID uuid.UUID, completed bool) (*models.Task, error) {
-	task := &models.Task{}
-	err := db.pool.QueryRow(ctx,
-		"UPDATE tasks SET completed = $1 WHERE id = $2 AND tenant_id = $3 RETURNING id, tenant_id, title, completed, created_at",
-		completed, taskID, tenantID).
-		Scan(&task.ID, &task.TenantID, &task.Title, &task.Completed, &task.CreatedAt)
-
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, pgx.ErrNoRows
-		}
-		return nil, err
-	}
-
-	return task, nil
-}
-
-func (db *Database) DeleteTask(ctx context.Context, taskID uuid.UUID, tenantID uuid.UUID) error {
-	commandTag, err := db.pool.Exec(ctx,
-		"DELETE FROM tasks WHERE id = $1 AND tenant_id = $2",
-		taskID, tenantID)
-
+func (d *Database) Close() error {
+	sqlDB, err := d.DB.DB()
 	if err != nil {
 		return err
 	}
-
-	if commandTag.RowsAffected() == 0 {
-		return pgx.ErrNoRows
-	}
-
-	return nil
+	return sqlDB.Close()
 }
 
-func (db *Database) Close() {
-	db.pool.Close()
+// AutoMigrate crea/actualiza tablas automáticamente
+func (d *Database) AutoMigrate() error {
+	return d.DB.AutoMigrate(&models.User{}, &models.Tenant{}, &models.Task{})
+}
+
+// User operations
+func (d *Database) CreateUser(ctx context.Context, email, passwordHash string) (*models.User, error) {
+	user := &models.User{
+		Email:        email,
+		PasswordHash: passwordHash,
+	}
+	if err := d.DB.WithContext(ctx).Create(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (d *Database) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	var user models.User
+	if err := d.DB.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (d *Database) GetUserPassword(ctx context.Context, userID string) (string, error) {
+	var user models.User
+	if err := d.DB.WithContext(ctx).Where("id = ?", userID).First(&user).Error; err != nil {
+		return "", err
+	}
+	return user.PasswordHash, nil
+}
+
+// Tenant operations
+func (d *Database) CreateTenant(ctx context.Context, userID string, name string) (*models.Tenant, error) {
+	tenant := &models.Tenant{
+		UserID: userID,
+		Name:   name,
+	}
+	if err := d.DB.WithContext(ctx).Create(tenant).Error; err != nil {
+		return nil, err
+	}
+	return tenant, nil
+}
+
+func (d *Database) GetTenantByUserID(ctx context.Context, userID string) (*models.Tenant, error) {
+	var tenant models.Tenant
+	if err := d.DB.WithContext(ctx).Where("user_id = ?", userID).First(&tenant).Error; err != nil {
+		return nil, err
+	}
+	return &tenant, nil
+}
+
+// Task operations
+func (d *Database) CreateTask(ctx context.Context, tenantID, title string) (*models.Task, error) {
+	task := &models.Task{
+		TenantID: tenantID,
+		Title:    title,
+	}
+	if err := d.DB.WithContext(ctx).Create(task).Error; err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func (d *Database) GetTasks(ctx context.Context, tenantID string) ([]models.Task, error) {
+	var tasks []models.Task
+	if err := d.DB.WithContext(ctx).Where("tenant_id = ?", tenantID).Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func (d *Database) UpdateTask(ctx context.Context, taskID, tenantID string, completed bool) (*models.Task, error) {
+	var task models.Task
+	if err := d.DB.WithContext(ctx).Where("id = ? AND tenant_id = ?", taskID, tenantID).First(&task).Error; err != nil {
+		return nil, err
+	}
+	task.Completed = completed
+	if err := d.DB.WithContext(ctx).Save(&task).Error; err != nil {
+		return nil, err
+	}
+	return &task, nil
+}
+
+func (d *Database) DeleteTask(ctx context.Context, taskID, tenantID string) error {
+	return d.DB.WithContext(ctx).Where("id = ? AND tenant_id = ?", taskID, tenantID).Delete(&models.Task{}).Error
 }
