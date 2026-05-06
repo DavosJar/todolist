@@ -1,0 +1,52 @@
+package templates
+
+templ RegisterPage(errorMsg string) {
+	@Layout(RegisterForm(errorMsg), false)
+}
+
+templ RegisterForm(errorMsg string) {
+	<h1>Crear Cuenta</h1>
+	if errorMsg != "" {
+		<div class="error">{ errorMsg }</div>
+	}
+	<form method="POST" class="auth-form">
+		<input
+			type="email"
+			name="email"
+			placeholder="Email"
+			required
+			autofocus/>
+		<input
+			type="password"
+			name="password"
+			placeholder="Contraseña"
+			minlength="6"
+			required/>
+		<input
+			type="password"
+			name="confirm_password"
+			placeholder="Confirmar contraseña"
+			minlength="6"
+			required/>
+		<button type="submit">Registrarse</button>
+		<div class="link">
+			¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
+		</div>
+	</form>
+}
+
+templ RegisterSuccessPage() {
+	@Layout(RegisterSuccess(), false)
+}
+
+templ RegisterSuccess() {
+	<h1>¡Registro exitoso!</h1>
+	<div class="success-message">
+		<p>Tu cuenta ha sido creada correctamente.</p>
+	</div>
+	<div style="text-align: center; margin-top: 20px;">
+		<a href="/login" style="color: #667eea; text-decoration: none; font-weight: 600;">
+			Ir al inicio de sesión
+		</a>
+	</div>
+}
